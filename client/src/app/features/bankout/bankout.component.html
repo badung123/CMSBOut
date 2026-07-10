@@ -1,0 +1,158 @@
+<div class="page-header">
+  <h2>Bank-out</h2>
+  <p>Quản lý yêu cầu rút tiền</p>
+</div>
+
+<div class="card form-card">
+  <div class="card-header">
+    <h3>Nhập thông tin</h3>
+    <button type="button" class="btn-import" disabled title="Tính năng sẽ bổ sung sau">
+      Import Excel
+    </button>
+  </div>
+
+  <form [formGroup]="form" class="bankout-form" (ngSubmit)="save()">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Request Bank ID</label>
+        <input type="text" formControlName="requestBankId" />
+      </div>
+      <div class="form-group">
+        <label>UserName</label>
+        <input type="text" formControlName="userName" />
+      </div>
+      <div class="form-group">
+        <label>Tên Tài khoản</label>
+        <input type="text" formControlName="bankAccountName" />
+        @if (previewAccountName) {
+          <small class="preview">Preview: {{ previewAccountName }}</small>
+        }
+      </div>
+      <div class="form-group">
+        <label>Số Tài Khoản</label>
+        <input type="text" formControlName="bankAccountNumber" />
+      </div>
+      <div class="form-group">
+        <label>Số tiền (10,000 - 10,000,000)</label>
+        <input type="number" formControlName="amount" min="10000" max="10000000" />
+      </div>
+      <div class="form-group">
+        <label>Ngân hàng</label>
+        <input type="text" formControlName="bank" />
+      </div>
+      <div class="form-group">
+        <label>Đối tác</label>
+        <select formControlName="agentId">
+          @for (agent of agents; track agent.id) {
+            <option [value]="agent.id">{{ agent.agentName }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    @if (formError) {
+      <div class="error-msg">{{ formError }}</div>
+    }
+    @if (formSuccess) {
+      <div class="success-msg">{{ formSuccess }}</div>
+    }
+
+    <button type="submit" class="btn-save" [disabled]="saving">
+      {{ saving ? 'Đang lưu...' : 'Lưu' }}
+    </button>
+  </form>
+</div>
+
+<div class="card filter-card">
+  <h3>Tìm kiếm</h3>
+  <form [formGroup]="filterForm" class="filter-form" (ngSubmit)="search()">
+    <input type="text" formControlName="userName" placeholder="UserName" />
+    <input type="text" formControlName="requestBankId" placeholder="Request ID" />
+    <select formControlName="status">
+      @for (opt of statusOptions; track opt.label) {
+        <option [ngValue]="opt.value">{{ opt.label }}</option>
+      }
+    </select>
+    <input type="date" formControlName="fromDate" />
+    <input type="date" formControlName="toDate" />
+    <button type="submit" class="btn-search">Tìm kiếm</button>
+    <button type="button" class="btn-reset" (click)="resetFilter()">Reset</button>
+  </form>
+</div>
+
+<div class="card table-card">
+  <h3>Lịch sử Bank-out</h3>
+
+  @if (loading) {
+    <div class="loading">Đang tải...</div>
+  } @else if (listData && listData.items.length === 0) {
+    <div class="empty">Không có dữ liệu.</div>
+  } @else if (listData) {
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>UserName</th>
+            <th>Tên Tài Khoản</th>
+            <th>Số Tài Khoản</th>
+            <th>Số Tiền</th>
+            <th>Ngân Hàng</th>
+            <th>Đối Tác</th>
+            <th>Request ID</th>
+            <th>Ngày Tạo</th>
+            <th>Ngày Bank</th>
+            <th>Log</th>
+            <th>Trạng Thái</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of listData.items; track item.id) {
+            <tr>
+              <td class="mono">{{ item.id | slice:0:8 }}...</td>
+              <td>{{ item.userName }}</td>
+              <td>{{ item.bankAccountName }}</td>
+              <td>{{ item.bankAccountNumber }}</td>
+              <td>{{ formatCurrency(item.amount) }}</td>
+              <td>{{ item.bank }}</td>
+              <td>{{ item.agentName }}</td>
+              <td>{{ item.requestBankId }}</td>
+              <td>{{ formatDateTime(item.createdDate) }}</td>
+              <td>{{ formatDateTime(item.bankDate) }}</td>
+              <td class="log-cell" [title]="item.log ?? ''">{{ item.log ?? '-' }}</td>
+              <td>
+                <span class="status-badge" [class]="getStatusClass(item.status)">
+                  {{ getStatusLabel(item.status) }}
+                </span>
+              </td>
+              <td class="actions">
+                @if (canAction(item)) {
+                  <button type="button" class="btn-approve" (click)="approve(item)">Duyệt</button>
+                  <button type="button" class="btn-cancel" (click)="cancel(item)">Hủy</button>
+                } @else {
+                  <span class="no-action">-</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <span>
+        Trang {{ listData.page }} / {{ listData.totalPages }}
+        ({{ listData.totalCount }} bản ghi)
+      </span>
+      <div class="pagination-buttons">
+        <button type="button" [disabled]="listData.page <= 1" (click)="changePage(listData.page - 1)">
+          Trước
+        </button>
+        <button type="button" [disabled]="listData.page >= listData.totalPages" (click)="changePage(listData.page + 1)">
+          Sau
+        </button>
+      </div>
+    </div>
+  }
+</div>

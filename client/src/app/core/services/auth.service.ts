@@ -1,0 +1,81 @@
+import { Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { tap } from 'rxjs/operators';
+import { API_BASE_URL } from '../constants';
+import { LoginRequest, LoginResponse, UserInfo } from '../models/api.models';
+
+const TOKEN_KEY = 'bankout_token';
+const USER_KEY = 'bankout_user';
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private readonly currentUser = signal<UserInfo | null>(this.loadUser());
+
+  constructor(
+    private readonly http: HttpClient,
+    private readonly router: Router
+  ) {}
+
+  get user() {
+    return this.currentUser.asReadonly();
+  }
+
+  get token(): string | null {
+    return localStorage.getItem(TOKEN_KEY);
+  }
+
+  isAuthenticated(): boolean {
+    const token = this.token;
+    if (!token) return false;
+    const user = this.currentUser();
+    if (!user) return false;
+    return true;
+  }
+
+  isAdmin(): boolean {
+    return this.currentUser()?.roles.includes('ADMIN') ?? false;
+  }
+
+  login(request: LoginRequest) {
+    return this.http.post<LoginResponse>(`${API_BASE_URL}/auth/login`, request).pipe(
+      tap((response) => {
+        localStorage.setItem(TOKEN_KEY, response.token);
+        const user: UserInfo = {
+          userName: response.userName,
+          fullName: response.fullName,
+          email: '',
+          roles: response.roles
+        };
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        this.currentUser.set(user);
+      })
+    );
+  }
+
+  logout(): void {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    this.currentUser.set(null);
+    this.router.navigate(['/login']);
+  }
+
+  loadProfile() {
+    return this.http.get<UserInfo>(`${API_BASE_URL}/auth/me`).pipe(
+      tap((user) => {
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        this.currentUser.set(user);
+      })
+    );
+  }
+
+  private loadUser(): UserInfo | null {
+    const raw = localStorage.getItem(USER_KEY);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as UserInfo;
+    } catch {
+      return null;
+    }
+  }
+}

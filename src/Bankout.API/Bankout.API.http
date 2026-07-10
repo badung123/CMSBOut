@@ -1,0 +1,6 @@
+@Bankout.API_HostAddress = http://localhost:5151
+
+GET {{Bankout.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,43 @@
+<div class="page-header">
+  <h2>Dashboard</h2>
+  <p>Tổng quan hệ thống Bankout</p>
+</div>
+
+@if (loading) {
+  <div class="loading">Đang tải dữ liệu...</div>
+} @else if (data) {
+  <div class="stats-grid">
+    <div class="stat-card balance-card">
+      <div class="stat-icon">₫</div>
+      <div class="stat-content">
+        <span class="stat-label">Balance</span>
+        <span class="stat-value">{{ formatCurrency(data.balance) }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card transaction-card">
+      <div class="stat-icon">#</div>
+      <div class="stat-content">
+        <span class="stat-label">Tổng Giao Dịch</span>
+        <span class="stat-value">{{ data.totalTransactions | number }}</span>
+      </div>
+    </div>
+  </div>
+
+  @if (auth.isAdmin()) {
+    <div class="balance-panel card">
+      <h3>Quản lý Balance (ADMIN)</h3>
+      <form [formGroup]="balanceForm" class="balance-form">
+        <input type="number" formControlName="amount" placeholder="Nhập số tiền" min="1" />
+        <button type="button" class="btn-add" (click)="addBalance()">Cộng tiền</button>
+        <button type="button" class="btn-subtract" (click)="subtractBalance()">Trừ tiền</button>
+      </form>
+      @if (balanceMessage) {
+        <div class="success-msg">{{ balanceMessage }}</div>
+      }
+      @if (balanceError) {
+        <div class="error-msg">{{ balanceError }}</div>
+      }
+    </div>
+  }
+}

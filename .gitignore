@@ -1,0 +1,24 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+## Angular
+client/node_modules/
+client/dist/
+client/.angular/
+
+## IDE
+.idea/
+*.swp
+*.swo
+
+## OS
+Thumbs.db
+.DS_Store
+
+## Secrets
+appsettings.*.local.json
+*.pfx

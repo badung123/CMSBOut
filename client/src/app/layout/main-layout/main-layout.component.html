@@ -1,0 +1,28 @@
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="logo">B</span>
+      <span class="title">Bankout CMS</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/bank-out" routerLinkActive="active">Bank-out</a>
+      @if (auth.isAdmin()) {
+        <a routerLink="/agents" routerLinkActive="active">Agent</a>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <strong>{{ auth.user()?.fullName }}</strong>
+        <small>{{ auth.user()?.roles?.join(', ') }}</small>
+      </div>
+      <button type="button" class="btn-logout" (click)="logout()">Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>
