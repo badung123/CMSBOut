@@ -25,6 +25,10 @@ export const routes: Routes = [
         path: 'agents',
         loadComponent: () => import('./features/agents/agents.component').then(m => m.AgentsComponent),
         canActivate: [adminGuard]
+      },
+      {
+        path: 'security',
+        loadComponent: () => import('./features/security/security.component').then(m => m.SecurityComponent)
       }
     ]
   },

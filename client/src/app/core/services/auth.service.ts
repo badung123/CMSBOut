@@ -1,12 +1,40 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { tap } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 import { API_BASE_URL } from '../constants';
-import { LoginRequest, LoginResponse, UserInfo } from '../models/api.models';
+import {
+  DisableTwoFactorRequest,
+  EnableTwoFactorRequest,
+  EnableTwoFactorResponse,
+  LoginRequest,
+  LoginResponse,
+  TwoFactorSetupResponse,
+  TwoFactorStatusResponse,
+  UserInfo,
+  VerifyTwoFactorRequest
+} from '../models/api.models';
 
 const TOKEN_KEY = 'bankout_token';
 const USER_KEY = 'bankout_user';
+
+function normalizeLoginResponse(raw: LoginResponse & Record<string, unknown>): LoginResponse {
+  return {
+    token: (raw.token ?? raw['Token'] ?? null) as string | null,
+    expiresAt: (raw.expiresAt ?? raw['ExpiresAt'] ?? null) as string | null,
+    userName: (raw.userName ?? raw['UserName'] ?? '') as string,
+    fullName: (raw.fullName ?? raw['FullName'] ?? '') as string,
+    roles: (raw.roles ?? raw['Roles'] ?? []) as string[],
+    requiresTwoFactor: Boolean(raw.requiresTwoFactor ?? raw['RequiresTwoFactor']),
+    pendingToken: (raw.pendingToken ?? raw['PendingToken'] ?? null) as string | null
+  };
+}
+
+function normalizeTwoFactorStatus(raw: TwoFactorStatusResponse & Record<string, unknown>): TwoFactorStatusResponse {
+  return {
+    enabled: Boolean(raw.enabled ?? raw['Enabled'])
+  };
+}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -39,18 +67,37 @@ export class AuthService {
 
   login(request: LoginRequest) {
     return this.http.post<LoginResponse>(`${API_BASE_URL}/auth/login`, request).pipe(
-      tap((response) => {
-        localStorage.setItem(TOKEN_KEY, response.token);
-        const user: UserInfo = {
-          userName: response.userName,
-          fullName: response.fullName,
-          email: '',
-          roles: response.roles
-        };
-        localStorage.setItem(USER_KEY, JSON.stringify(user));
-        this.currentUser.set(user);
-      })
+      map((response) => normalizeLoginResponse(response as LoginResponse & Record<string, unknown>))
     );
+  }
+
+  verifyTwoFactor(request: VerifyTwoFactorRequest) {
+    return this.http.post<LoginResponse>(`${API_BASE_URL}/auth/verify-2fa`, request).pipe(
+      map((response) => normalizeLoginResponse(response as LoginResponse & Record<string, unknown>)),
+      tap((response) => this.persistSession(response))
+    );
+  }
+
+  completeLogin(response: LoginResponse) {
+    this.persistSession(response);
+  }
+
+  getTwoFactorStatus() {
+    return this.http.get<TwoFactorStatusResponse>(`${API_BASE_URL}/auth/2fa/status`).pipe(
+      map((response) => normalizeTwoFactorStatus(response as TwoFactorStatusResponse & Record<string, unknown>))
+    );
+  }
+
+  setupTwoFactor() {
+    return this.http.post<TwoFactorSetupResponse>(`${API_BASE_URL}/auth/2fa/setup`, {});
+  }
+
+  enableTwoFactor(request: EnableTwoFactorRequest) {
+    return this.http.post<EnableTwoFactorResponse>(`${API_BASE_URL}/auth/2fa/enable`, request);
+  }
+
+  disableTwoFactor(request: DisableTwoFactorRequest) {
+    return this.http.post<{ message: string }>(`${API_BASE_URL}/auth/2fa/disable`, request);
   }
 
   logout(): void {
@@ -67,6 +114,20 @@ export class AuthService {
         this.currentUser.set(user);
       })
     );
+  }
+
+  private persistSession(response: LoginResponse): void {
+    if (!response.token) return;
+
+    localStorage.setItem(TOKEN_KEY, response.token);
+    const user: UserInfo = {
+      userName: response.userName,
+      fullName: response.fullName,
+      email: '',
+      roles: response.roles
+    };
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    this.currentUser.set(user);
   }
 
   private loadUser(): UserInfo | null {

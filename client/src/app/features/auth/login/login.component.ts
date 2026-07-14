@@ -18,10 +18,17 @@ export class LoginComponent {
 
   loading = false;
   errorMessage = '';
+  step: 'credentials' | 'twoFactor' = 'credentials';
+  pendingToken = '';
+  pendingUserName = '';
 
   form = this.fb.nonNullable.group({
     userName: ['', Validators.required],
     password: ['', Validators.required]
+  });
+
+  twoFactorForm = this.fb.nonNullable.group({
+    code: ['', [Validators.required, Validators.pattern(/^[\dA-Za-z-]{6,20}$/)]]
   });
 
   submit(): void {
@@ -34,8 +41,28 @@ export class LoginComponent {
     this.errorMessage = '';
 
     this.auth.login(this.form.getRawValue()).subscribe({
-      next: () => {
+      next: (response) => {
         this.loading = false;
+
+        if (response.requiresTwoFactor) {
+          if (!response.pendingToken) {
+            this.errorMessage = 'Không thể khởi tạo bước xác thực 2FA. Vui lòng thử lại.';
+            return;
+          }
+
+          this.pendingToken = response.pendingToken;
+          this.pendingUserName = response.userName;
+          this.step = 'twoFactor';
+          this.twoFactorForm.reset({ code: '' });
+          return;
+        }
+
+        if (!response.token) {
+          this.errorMessage = 'Đăng nhập thất bại. Vui lòng thử lại.';
+          return;
+        }
+
+        this.auth.completeLogin(response);
         this.router.navigate(['/dashboard']);
       },
       error: () => {
@@ -43,5 +70,37 @@ export class LoginComponent {
         this.errorMessage = 'Tên đăng nhập hoặc mật khẩu không đúng.';
       }
     });
+  }
+
+  submitTwoFactor(): void {
+    if (this.twoFactorForm.invalid) {
+      this.twoFactorForm.markAllAsTouched();
+      return;
+    }
+
+    this.loading = true;
+    this.errorMessage = '';
+
+    this.auth.verifyTwoFactor({
+      pendingToken: this.pendingToken,
+      code: this.twoFactorForm.controls.code.value.trim()
+    }).subscribe({
+      next: () => {
+        this.loading = false;
+        this.router.navigate(['/dashboard']);
+      },
+      error: () => {
+        this.loading = false;
+        this.errorMessage = 'Mã xác thực không đúng hoặc đã hết hạn.';
+      }
+    });
+  }
+
+  backToCredentials(): void {
+    this.step = 'credentials';
+    this.pendingToken = '';
+    this.pendingUserName = '';
+    this.errorMessage = '';
+    this.twoFactorForm.reset({ code: '' });
   }
 }

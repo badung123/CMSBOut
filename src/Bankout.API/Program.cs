@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text;
 using Bankout.API.Data;
 using Bankout.API.Helpers;
@@ -58,12 +59,16 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IBankoutService, BankoutService>();
 builder.Services.AddScoped<IAgentService, AgentService>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularClient", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")//https://yensongviet.com,http://localhost:4200
+        policy.WithOrigins("https://yensongviet.com")//https://yensongviet.com,http://localhost:4200
 			.AllowAnyHeader()
             .AllowAnyMethod();
     });

@@ -112,6 +112,44 @@
   }
 }
 
+.btn-secondary {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  background: #fff;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #f8fafc;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.two-factor-info {
+  margin-bottom: 20px;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.5;
+
+  p {
+    margin: 0 0 8px;
+  }
+
+  .hint {
+    color: #94a3b8;
+    font-size: 13px;
+  }
+}
+
 .demo-info {
   margin-top: 24px;
   text-align: center;

@@ -4,11 +4,18 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
-  expiresAt: string;
+  token: string | null;
+  expiresAt: string | null;
   userName: string;
   fullName: string;
   roles: string[];
+  requiresTwoFactor?: boolean;
+  pendingToken?: string | null;
+}
+
+export interface VerifyTwoFactorRequest {
+  pendingToken: string;
+  code: string;
 }
 
 export interface UserInfo {
@@ -16,6 +23,28 @@ export interface UserInfo {
   fullName: string;
   email: string;
   roles: string[];
+  twoFactorEnabled?: boolean;
+}
+
+export interface TwoFactorStatusResponse {
+  enabled: boolean;
+}
+
+export interface TwoFactorSetupResponse {
+  sharedKey: string;
+  authenticatorUri: string;
+}
+
+export interface EnableTwoFactorRequest {
+  code: string;
+}
+
+export interface EnableTwoFactorResponse {
+  recoveryCodes: string[];
+}
+
+export interface DisableTwoFactorRequest {
+  password: string;
 }
 
 export interface DashboardData {
