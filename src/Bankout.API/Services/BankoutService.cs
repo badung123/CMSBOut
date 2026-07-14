@@ -14,37 +14,49 @@ public interface IBankoutService
     Task<IReadOnlyList<AgentOptionResponse>> GetAgentOptionsAsync();
     Task<BankoutListItemResponse> ApproveAsync(Guid id);
     Task<BankoutListItemResponse> CancelAsync(Guid id);
+    Task<CallbackResponse> ProcessCallbackAsync(PayoutCallbackRequest request);
 }
 
 public class BankoutService : IBankoutService
 {
-    private const double MinAmount = 10000;
-    private const double MaxAmount = 10000000;
+    private const double MinAmount = 100000;
+    private const double MaxAmount = 300000000;
 
     private readonly ApplicationDbContext _context;
+    private readonly IPartnerBankService _partnerBankService;
 
-    public BankoutService(ApplicationDbContext context)
+    public BankoutService(ApplicationDbContext context, IPartnerBankService partnerBankService)
     {
         _context = context;
+        _partnerBankService = partnerBankService;
     }
 
     public async Task<BankoutListItemResponse> CreateAsync(CreateBankoutRequest request)
     {
         ValidateCreateRequest(request);
 
-        var agentExists = await _context.Agents.AnyAsync(a => a.Id == request.AgentId);
-        if (!agentExists)
-            throw new ArgumentException("Agent not found.");
+        var agent = await _context.Agents.FindAsync(request.AgentId)
+            ?? throw new ArgumentException("Agent not found.");
+
+        if (string.Equals(agent.AgentName, "LAYMA", StringComparison.OrdinalIgnoreCase)
+            && string.IsNullOrWhiteSpace(request.RequestBankId))
+            throw new ArgumentException("Request Bank ID is required for LAYMA agent.");
+
+        var bank = await ResolveBankAsync(request.BankNo);
 
         var entity = new BankoutRequest
         {
             Id = Guid.NewGuid(),
-            RequestBankId = request.RequestBankId.Trim(),
-            UserName = request.UserName.Trim(),
+            RequestBankId = string.IsNullOrWhiteSpace(request.RequestBankId)
+                ? null
+                : request.RequestBankId.Trim(),
+            UserName = string.Empty,
             BankAccountName = VietnameseTextHelper.ToUppercaseNoAccent(request.BankAccountName),
             BankAccountNumber = request.BankAccountNumber.Trim(),
             Amount = request.Amount,
-            Bank = request.Bank.Trim(),
+            BankNo = bank.BankNo,
+            BankName = bank.BankName,
+            ShortBankName = bank.ShortBankName,
             AgentId = request.AgentId,
             CreatedDate = DateTime.UtcNow,
             Status = StatusActionEnum.WaitAccept,
@@ -63,11 +75,8 @@ public class BankoutService : IBankoutService
             .Include(b => b.Agent)
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(filter.UserName))
-            query = query.Where(b => b.UserName.Contains(filter.UserName.Trim()));
-
         if (!string.IsNullOrWhiteSpace(filter.RequestBankId))
-            query = query.Where(b => b.RequestBankId.Contains(filter.RequestBankId.Trim()));
+            query = query.Where(b => b.RequestBankId != null && b.RequestBankId.Contains(filter.RequestBankId.Trim()));
 
         if (filter.Status.HasValue)
             query = query.Where(b => b.Status == filter.Status.Value);
@@ -91,11 +100,12 @@ public class BankoutService : IBankoutService
             .Take(pageSize)
             .Select(b => new BankoutListItemResponse(
                 b.Id,
-                b.UserName,
                 b.BankAccountName,
                 b.BankAccountNumber,
                 b.Amount,
-                b.Bank,
+                b.BankNo,
+                b.BankName,
+                b.ShortBankName,
                 b.Agent.AgentName,
                 b.RequestBankId,
                 b.CreatedDate,
@@ -130,19 +140,25 @@ public class BankoutService : IBankoutService
         if (balance.Amount < entity.Amount)
             throw new InvalidOperationException("Insufficient balance to approve this request.");
 
-        balance.Amount -= entity.Amount;
-        entity.Status = StatusActionEnum.WaitBank;
-        entity.ModifiedDate = DateTime.UtcNow;
-        entity.Log = AppendLog(entity.Log, "Approved");
+        var payOutResult = await _partnerBankService.RequestPayOutAsync(
+            entity.Id.ToString(),
+            entity.BankNo,
+            entity.BankAccountNumber,
+            entity.BankAccountName,
+            entity.Amount);
 
-        _context.BalanceHistories.Add(new BalanceHistory
+        entity.ModifiedDate = DateTime.UtcNow;
+
+        if (payOutResult.Status == 1)
         {
-            Id = Guid.NewGuid(),
-            Amount = entity.Amount,
-            Type = ChangeBalanceTypeEnum.Bankout,
-            RequestBankOutId = entity.Id,
-            CreatedDate = DateTime.UtcNow
-        });
+            entity.Status = StatusActionEnum.WaitBank;
+            entity.Log = AppendLog(entity.Log, "Gửi y/c bank thành công");
+        }
+        else
+        {
+            entity.Status = StatusActionEnum.ErrorRequestBank;
+            entity.Log = AppendLog(entity.Log, payOutResult.Message);
+        }
 
         await _context.SaveChangesAsync();
         return await MapToResponseAsync(entity.Id);
@@ -154,10 +170,10 @@ public class BankoutService : IBankoutService
             .FirstOrDefaultAsync(b => b.Id == id)
             ?? throw new KeyNotFoundException("Bankout request not found.");
 
-        if (entity.Status is StatusActionEnum.Success or StatusActionEnum.Error)
+        if (entity.Status is StatusActionEnum.Success or StatusActionEnum.ErrorBank)
             throw new InvalidOperationException("Cannot cancel a completed request.");
 
-        entity.Status = StatusActionEnum.Error;
+        entity.Status = StatusActionEnum.ErrorRequestBank;
         entity.ModifiedDate = DateTime.UtcNow;
         entity.Log = AppendLog(entity.Log, "Cancelled");
 
@@ -165,21 +181,84 @@ public class BankoutService : IBankoutService
         return await MapToResponseAsync(entity.Id);
     }
 
+    public async Task<CallbackResponse> ProcessCallbackAsync(PayoutCallbackRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.RequestId))
+            return new CallbackResponse("1", "requestId is required");
+
+        if (!Guid.TryParse(request.RequestId, out var requestGuid))
+            return new CallbackResponse("1", "requestId is invalid");
+
+        var entity = await _context.BankoutRequests
+            .FirstOrDefaultAsync(b => b.Id == requestGuid);
+
+        if (entity == null)
+            return new CallbackResponse("1", "request not found");
+
+        var expectedSignature = _partnerBankService.ComputeCallbackSignature(request.RequestId, request.TransId);
+        if (!string.Equals(expectedSignature, request.Signature, StringComparison.OrdinalIgnoreCase))
+        {
+            entity.Status = StatusActionEnum.ErrorBank;
+            entity.ModifiedDate = DateTime.UtcNow;
+            entity.Log = AppendLog(entity.Log, "Kiểm tra chữ ký không giống nhau");
+            await _context.SaveChangesAsync();
+            return new CallbackResponse("1", "signature not valid");
+        }
+
+        entity.ModifiedDate = DateTime.UtcNow;
+
+        if (request.Status == 1)
+        {
+            entity.Status = StatusActionEnum.Success;
+            entity.BankDate = ParseCallbackDate(request.Date) ?? DateTime.UtcNow;
+            entity.Log = AppendLog(entity.Log, "bank thành công");
+
+            var alreadyDeducted = await _context.BalanceHistories
+                .AnyAsync(h => h.RequestBankOutId == entity.Id && h.Type == ChangeBalanceTypeEnum.Bankout);
+
+            if (!alreadyDeducted)
+            {
+                var balance = await _context.Balances.FirstAsync();
+                balance.Amount -= entity.Amount;
+
+                _context.BalanceHistories.Add(new BalanceHistory
+                {
+                    Id = Guid.NewGuid(),
+                    Amount = entity.Amount,
+                    Type = ChangeBalanceTypeEnum.Bankout,
+                    RequestBankOutId = entity.Id,
+                    CreatedDate = DateTime.UtcNow
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            return new CallbackResponse("0", "Success");
+        }
+
+        entity.Status = StatusActionEnum.ErrorBank;
+        entity.Log = AppendLog(entity.Log, request.Message);
+        await _context.SaveChangesAsync();
+        return new CallbackResponse("1", request.Message);
+    }
+
+    private async Task<PartnerBankItem> ResolveBankAsync(string bankNo)
+    {
+        var banks = await _partnerBankService.GetBankListAsync();
+        var bank = banks.FirstOrDefault(b => b.BankNo == bankNo.Trim())
+            ?? throw new ArgumentException("Ngân hàng không hợp lệ.");
+
+        return bank;
+    }
+
     private static void ValidateCreateRequest(CreateBankoutRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.RequestBankId))
-            throw new ArgumentException("Request Bank ID is required.");
-
-        if (string.IsNullOrWhiteSpace(request.UserName))
-            throw new ArgumentException("UserName is required.");
-
         if (string.IsNullOrWhiteSpace(request.BankAccountName))
             throw new ArgumentException("Bank account name is required.");
 
         if (string.IsNullOrWhiteSpace(request.BankAccountNumber))
             throw new ArgumentException("Bank account number is required.");
 
-        if (string.IsNullOrWhiteSpace(request.Bank))
+        if (string.IsNullOrWhiteSpace(request.BankNo))
             throw new ArgumentException("Bank is required.");
 
         if (request.Amount < MinAmount || request.Amount > MaxAmount)
@@ -193,11 +272,12 @@ public class BankoutService : IBankoutService
             .Where(b => b.Id == id)
             .Select(b => new BankoutListItemResponse(
                 b.Id,
-                b.UserName,
                 b.BankAccountName,
                 b.BankAccountNumber,
                 b.Amount,
-                b.Bank,
+                b.BankNo,
+                b.BankName,
+                b.ShortBankName,
                 b.Agent.AgentName,
                 b.RequestBankId,
                 b.CreatedDate,
@@ -212,5 +292,16 @@ public class BankoutService : IBankoutService
         var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
         var entry = $"[{timestamp}] {message}";
         return string.IsNullOrWhiteSpace(current) ? entry : $"{current} | {entry}";
+    }
+
+    private static DateTime? ParseCallbackDate(string date)
+    {
+        if (string.IsNullOrWhiteSpace(date))
+            return null;
+
+        if (DateTime.TryParseExact(date, "dd/MM/yyyy HH:mm:ss", null, System.Globalization.DateTimeStyles.None, out var parsed))
+            return parsed;
+
+        return DateTime.TryParse(date, out var fallback) ? fallback : null;
     }
 }

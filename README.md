@@ -86,9 +86,11 @@ npm start
 | POST | /api/dashboard/balance/add | Cộng balance (ADMIN) |
 | POST | /api/dashboard/balance/subtract | Trừ balance (ADMIN) |
 | GET/POST | /api/bankout | Danh sách / Tạo mới |
-| POST | /api/bankout/{id}/approve | Duyệt |
+| POST | /api/bankout/{id}/approve | Duyệt và gửi yêu cầu thanh toán sang đối tác |
 | POST | /api/bankout/{id}/cancel | Hủy |
+| GET | /api/bankout/banks | Danh sách ngân hàng từ đối tác |
 | GET | /api/bankout/agents | Dropdown agents |
+| POST | /api/callback/payout | Callback từ đối tác (public) |
 | CRUD | /api/agents | Quản lý Agent (ADMIN) |
 
 ## Database Schema

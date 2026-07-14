@@ -51,6 +51,8 @@ builder.Services.AddAuthentication(options =>
     });
 
 builder.Services.AddAuthorization();
+builder.Services.Configure<PartnerBankSettings>(builder.Configuration.GetSection("PartnerBank"));
+builder.Services.AddHttpClient<IPartnerBankService, PartnerBankService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IBankoutService, BankoutService>();
@@ -61,8 +63,8 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularClient", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
-            .AllowAnyHeader()
+        policy.WithOrigins("http://localhost:4200")//https://yensongviet.com,http://localhost:4200
+			.AllowAnyHeader()
             .AllowAnyMethod();
     });
 });

@@ -183,10 +183,86 @@ table {
   color: #047857;
 }
 
-.status-error {
+.status-error-request {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.status-error-bank {
   background: #fee2e2;
   color: #b91c1c;
 }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+
+  h3 {
+    margin: 0 0 16px;
+    font-size: 18px;
+    color: #0f172a;
+  }
+}
+
+.confirm-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #334155;
+
+  strong {
+    color: #0f172a;
+  }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .btn-cancel {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+  }
+
+  .btn-approve {
+    background: #059669;
+    color: #fff;
+  }
+}
+
 
 .actions {
   display: flex;
@@ -254,6 +330,16 @@ table {
   color: #dc2626;
   font-size: 13px;
   margin-top: 8px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border-radius: 8px;
+}
+
+.field-error {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #dc2626;
 }
 
 .loading, .empty {

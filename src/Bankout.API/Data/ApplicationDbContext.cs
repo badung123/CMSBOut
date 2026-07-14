@@ -48,12 +48,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<BankoutRequest>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.RequestBankId).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.UserName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.RequestBankId).HasMaxLength(100);
+            entity.Property(e => e.UserName).HasMaxLength(100);
             entity.Property(e => e.BankAccountName).HasMaxLength(200);
             entity.Property(e => e.BankAccountNumber).HasMaxLength(50);
             entity.Property(e => e.Amount).IsRequired();
-            entity.Property(e => e.Bank).HasMaxLength(100);
+            entity.Property(e => e.BankNo).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.BankName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.ShortBankName).IsRequired().HasMaxLength(50);
             entity.Property(e => e.CreatedDate).IsRequired();
             entity.Property(e => e.Status).IsRequired();
             entity.Property(e => e.Log).HasMaxLength(2000);

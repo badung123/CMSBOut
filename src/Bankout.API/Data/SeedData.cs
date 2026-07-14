@@ -31,6 +31,12 @@ public static class SeedData
             await context.SaveChangesAsync();
         }
 
+        if (!await context.Agents.AnyAsync(a => a.AgentName == "LAYMA"))
+        {
+            context.Agents.Add(new Agent { AgentName = "LAYMA", CreatedDate = DateTime.UtcNow });
+            await context.SaveChangesAsync();
+        }
+
         if (!context.Agents.Any())
         {
             context.Agents.AddRange(

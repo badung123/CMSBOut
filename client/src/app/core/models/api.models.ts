@@ -24,28 +24,34 @@ export interface DashboardData {
 }
 
 export interface CreateBankoutRequest {
-  requestBankId: string;
-  userName: string;
+  requestBankId?: string | null;
   bankAccountName: string;
   bankAccountNumber: string;
   amount: number;
-  bank: string;
+  bankNo: string;
   agentId: number;
 }
 
 export interface BankoutListItem {
   id: string;
-  userName: string;
   bankAccountName: string;
   bankAccountNumber: string;
   amount: number;
-  bank: string;
+  bankNo: string;
+  bankName: string;
+  shortBankName: string;
   agentName: string;
-  requestBankId: string;
+  requestBankId: string | null;
   createdDate: string;
   bankDate: string | null;
   log: string | null;
   status: number;
+}
+
+export interface PartnerBankItem {
+  bankNo: string;
+  bankName: string;
+  shortBankName: string;
 }
 
 export interface PagedResponse<T> {

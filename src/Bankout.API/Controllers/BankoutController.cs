@@ -12,10 +12,12 @@ namespace Bankout.API.Controllers;
 public class BankoutController : ControllerBase
 {
     private readonly IBankoutService _bankoutService;
+    private readonly IPartnerBankService _partnerBankService;
 
-    public BankoutController(IBankoutService bankoutService)
+    public BankoutController(IBankoutService bankoutService, IPartnerBankService partnerBankService)
     {
         _bankoutService = bankoutService;
+        _partnerBankService = partnerBankService;
     }
 
     [HttpPost]
@@ -34,7 +36,6 @@ public class BankoutController : ControllerBase
 
     [HttpGet]
     public async Task<ActionResult<PagedResponse<BankoutListItemResponse>>> GetList(
-        [FromQuery] string? userName,
         [FromQuery] string? requestBankId,
         [FromQuery] StatusActionEnum? status,
         [FromQuery] DateTime? fromDate,
@@ -42,7 +43,7 @@ public class BankoutController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
-        var filter = new BankoutFilterRequest(userName, requestBankId, status, fromDate, toDate, page, pageSize);
+        var filter = new BankoutFilterRequest(requestBankId, status, fromDate, toDate, page, pageSize);
         return Ok(await _bankoutService.GetPagedAsync(filter));
     }
 
@@ -50,6 +51,19 @@ public class BankoutController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<AgentOptionResponse>>> GetAgents()
     {
         return Ok(await _bankoutService.GetAgentOptionsAsync());
+    }
+
+    [HttpGet("banks")]
+    public async Task<ActionResult<IReadOnlyList<PartnerBankItem>>> GetBanks()
+    {
+        try
+        {
+            return Ok(await _partnerBankService.GetBankListAsync());
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Không thể lấy danh sách ngân hàng: {ex.Message}" });
+        }
     }
 
     [HttpPost("{id:guid}/approve")]
@@ -66,6 +80,10 @@ public class BankoutController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+        catch (HttpRequestException ex)
+        {
+            return BadRequest(new { message = $"Lỗi kết nối đối tác: {ex.Message}" });
         }
     }
 

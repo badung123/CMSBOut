@@ -3,16 +3,14 @@ using Bankout.API.Models.Enums;
 namespace Bankout.API.DTOs;
 
 public record CreateBankoutRequest(
-    string RequestBankId,
-    string UserName,
+    string? RequestBankId,
     string BankAccountName,
     string BankAccountNumber,
     double Amount,
-    string Bank,
+    string BankNo,
     int AgentId);
 
 public record BankoutFilterRequest(
-    string? UserName,
     string? RequestBankId,
     StatusActionEnum? Status,
     DateTime? FromDate,
@@ -22,13 +20,14 @@ public record BankoutFilterRequest(
 
 public record BankoutListItemResponse(
     Guid Id,
-    string UserName,
     string BankAccountName,
     string BankAccountNumber,
     double Amount,
-    string Bank,
+    string BankNo,
+    string BankName,
+    string ShortBankName,
     string AgentName,
-    string RequestBankId,
+    string? RequestBankId,
     DateTime CreatedDate,
     DateTime? BankDate,
     string? Log,

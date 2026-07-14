@@ -5,11 +5,11 @@ import {
   AgentOption,
   BankoutListItem,
   CreateBankoutRequest,
-  PagedResponse
+  PagedResponse,
+  PartnerBankItem
 } from '../models/api.models';
 
 export interface BankoutFilter {
-  userName?: string;
   requestBankId?: string;
   status?: number | null;
   fromDate?: string;
@@ -31,7 +31,6 @@ export class BankoutService {
       .set('page', (filter.page ?? 1).toString())
       .set('pageSize', (filter.pageSize ?? 10).toString());
 
-    if (filter.userName) params = params.set('userName', filter.userName);
     if (filter.requestBankId) params = params.set('requestBankId', filter.requestBankId);
     if (filter.status != null) params = params.set('status', filter.status.toString());
     if (filter.fromDate) params = params.set('fromDate', filter.fromDate);
@@ -42,6 +41,10 @@ export class BankoutService {
 
   getAgentOptions() {
     return this.http.get<AgentOption[]>(`${API_BASE_URL}/bankout/agents`);
+  }
+
+  getBanks() {
+    return this.http.get<PartnerBankItem[]>(`${API_BASE_URL}/bankout/banks`);
   }
 
   approve(id: string) {
