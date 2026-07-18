@@ -155,3 +155,24 @@
   text-align: center;
   color: #94a3b8;
 }
+
+@media (max-width: 767px) {
+  .login-page {
+    padding: 16px;
+    align-items: flex-start;
+    padding-top: 32px;
+  }
+
+  .login-card {
+    padding: 28px 20px;
+    border-radius: 12px;
+  }
+
+  .brand {
+    margin-bottom: 24px;
+
+    h1 {
+      font-size: 20px;
+    }
+  }
+}

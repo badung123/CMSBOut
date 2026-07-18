@@ -347,3 +347,156 @@ table {
   text-align: center;
   color: #64748b;
 }
+
+.mobile-list {
+  display: none;
+}
+
+.mobile-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+  background: #fff;
+
+  & + & {
+    margin-top: 12px;
+  }
+}
+
+.mobile-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.mobile-amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.mobile-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+  margin: 0;
+
+  div {
+    min-width: 0;
+  }
+
+  dt {
+    margin: 0 0 2px;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #94a3b8;
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 13px;
+    color: #334155;
+    word-break: break-word;
+  }
+
+  .full-width {
+    grid-column: 1 / -1;
+  }
+}
+
+.mobile-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+
+  button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-approve {
+    background: #059669;
+    color: #fff;
+  }
+
+  .btn-cancel {
+    background: #dc2626;
+    color: #fff;
+  }
+}
+
+@media (max-width: 1023px) {
+  .form-card .card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .bankout-form .form-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+
+  .desktop-table {
+    display: none;
+  }
+
+  .mobile-list {
+    display: block;
+  }
+}
+
+@media (max-width: 767px) {
+  .bankout-form .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-save {
+    width: 100%;
+  }
+
+  .filter-form {
+    flex-direction: column;
+    align-items: stretch;
+
+    input,
+    select,
+    .btn-search,
+    .btn-reset {
+      width: 100%;
+      min-width: 0;
+    }
+  }
+
+  .pagination {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    text-align: center;
+
+    .pagination-buttons {
+      justify-content: center;
+    }
+  }
+
+  .modal-card {
+    padding: 20px 16px;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+
+    button {
+      width: 100%;
+    }
+  }
+}

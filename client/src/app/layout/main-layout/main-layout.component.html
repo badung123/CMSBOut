@@ -1,16 +1,26 @@
-<div class="layout">
+<div class="layout" [class.sidebar-open]="sidebarOpen">
+  <button
+    type="button"
+    class="sidebar-backdrop"
+    aria-label="Đóng menu"
+    (click)="closeSidebar()"
+  ></button>
+
   <aside class="sidebar">
     <div class="sidebar-brand">
       <span class="logo">B</span>
       <span class="title">Bankout CMS</span>
+      <button type="button" class="btn-close-sidebar" aria-label="Đóng menu" (click)="closeSidebar()">
+        &times;
+      </button>
     </div>
 
     <nav class="sidebar-nav">
-      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-      <a routerLink="/bank-out" routerLinkActive="active">Bank-out</a>
-      <a routerLink="/security" routerLinkActive="active">Bảo mật</a>
+      <a routerLink="/dashboard" routerLinkActive="active" (click)="closeSidebar()">Dashboard</a>
+      <a routerLink="/bank-out" routerLinkActive="active" (click)="closeSidebar()">Bank-out</a>
+      <a routerLink="/security" routerLinkActive="active" (click)="closeSidebar()">Bảo mật</a>
       @if (auth.isAdmin()) {
-        <a routerLink="/agents" routerLinkActive="active">Agent</a>
+        <a routerLink="/agents" routerLinkActive="active" (click)="closeSidebar()">Agent</a>
       }
     </nav>
 
@@ -23,7 +33,18 @@
     </div>
   </aside>
 
-  <main class="content">
-    <router-outlet />
-  </main>
+  <div class="main-area">
+    <header class="mobile-header">
+      <button type="button" class="btn-menu" aria-label="Mở menu" (click)="toggleSidebar()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <span class="mobile-title">Bankout CMS</span>
+    </header>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
 </div>

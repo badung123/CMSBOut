@@ -29,7 +29,8 @@
   } @else if (agents.length === 0) {
     <div class="empty">Chưa có agent nào.</div>
   } @else {
-    <table>
+    <div class="table-wrapper desktop-table">
+      <table>
       <thead>
         <tr>
           <th>ID</th>
@@ -51,6 +52,23 @@
           </tr>
         }
       </tbody>
-    </table>
+      </table>
+    </div>
+
+    <div class="mobile-list">
+      @for (agent of agents; track agent.id) {
+        <article class="mobile-item">
+          <div class="mobile-item-header">
+            <strong>{{ agent.agentName }}</strong>
+            <span class="mobile-id">#{{ agent.id }}</span>
+          </div>
+          <p class="mobile-meta">Ngày tạo: {{ formatDateTime(agent.createdDate) }}</p>
+          <div class="mobile-actions">
+            <button type="button" class="btn-edit" (click)="startEdit(agent)">Sửa</button>
+            <button type="button" class="btn-delete" (click)="delete(agent)">Xóa</button>
+          </div>
+        </article>
+      }
+    </div>
   }
 </div>

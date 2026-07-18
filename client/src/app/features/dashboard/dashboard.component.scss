@@ -118,3 +118,35 @@
   text-align: center;
   color: #64748b;
 }
+
+@media (max-width: 767px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    padding: 20px;
+
+    .stat-icon {
+      width: 52px;
+      height: 52px;
+      font-size: 22px;
+    }
+
+    .stat-value {
+      font-size: 22px;
+    }
+  }
+
+  .balance-form {
+    flex-direction: column;
+
+    input,
+    button {
+      width: 100%;
+      min-width: 0;
+    }
+  }
+}

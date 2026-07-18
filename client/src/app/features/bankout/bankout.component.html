@@ -101,7 +101,7 @@
   } @else if (listData && listData.items.length === 0) {
     <div class="empty">Không có dữ liệu.</div>
   } @else if (listData) {
-    <div class="table-wrapper">
+    <div class="table-wrapper desktop-table">
       <table>
         <thead>
           <tr>
@@ -149,6 +149,39 @@
           }
         </tbody>
       </table>
+    </div>
+
+    <div class="mobile-list">
+      @for (item of listData.items; track item.id) {
+        <article class="mobile-item">
+          <div class="mobile-item-header">
+            <span class="status-badge" [class]="getStatusClass(item.status)">
+              {{ getStatusLabel(item.status) }}
+            </span>
+            <span class="mobile-amount">{{ formatCurrency(item.amount) }}</span>
+          </div>
+
+          <dl class="mobile-details">
+            <div><dt>Tên TK</dt><dd>{{ item.bankAccountName }}</dd></div>
+            <div><dt>Số TK</dt><dd>{{ item.bankAccountNumber }}</dd></div>
+            <div><dt>Ngân hàng</dt><dd>{{ formatBankDisplay(item) }}</dd></div>
+            <div><dt>Đối tác</dt><dd>{{ item.agentName }}</dd></div>
+            <div><dt>Request ID</dt><dd>{{ item.requestBankId ?? '-' }}</dd></div>
+            <div><dt>Ngày tạo</dt><dd>{{ formatDateTime(item.createdDate) }}</dd></div>
+            <div><dt>Ngày bank</dt><dd>{{ formatDateTime(item.bankDate) }}</dd></div>
+            @if (item.log) {
+              <div class="full-width"><dt>Log</dt><dd>{{ item.log }}</dd></div>
+            }
+          </dl>
+
+          @if (canAction(item)) {
+            <div class="mobile-actions">
+              <button type="button" class="btn-approve" (click)="openApproveConfirm(item)">Duyệt</button>
+              <button type="button" class="btn-cancel" (click)="cancel(item)">Hủy</button>
+            </div>
+          }
+        </article>
+      }
     </div>
 
     <div class="pagination">
