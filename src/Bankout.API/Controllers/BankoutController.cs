@@ -35,13 +35,13 @@ public class BankoutController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PagedResponse<BankoutListItemResponse>>> GetList(
+    public async Task<ActionResult<BankoutPagedResponse>> GetList(
         [FromQuery] string? requestBankId,
         [FromQuery] StatusActionEnum? status,
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 50)
     {
         var filter = new BankoutFilterRequest(requestBankId, status, fromDate, toDate, page, pageSize);
         return Ok(await _bankoutService.GetPagedAsync(filter));

@@ -16,7 +16,15 @@ public record BankoutFilterRequest(
     DateTime? FromDate,
     DateTime? ToDate,
     int Page = 1,
-    int PageSize = 10);
+    int PageSize = 50);
+
+public record BankoutPagedResponse(
+    IReadOnlyList<BankoutListItemResponse> Items,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages,
+    double TotalSuccessAmount);
 
 public record BankoutListItemResponse(
     Guid Id,

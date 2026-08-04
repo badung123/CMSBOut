@@ -94,7 +94,15 @@
 </div>
 
 <div class="card table-card">
-  <h3>Lịch sử Bank-out</h3>
+  <div class="table-card-header">
+    <h3>Lịch sử Bank-out</h3>
+    @if (listData && !loading) {
+      <div class="success-stat">
+        <span class="success-stat-label">Tổng tiền thành công</span>
+        <strong class="success-stat-value">{{ formatCurrency(listData.totalSuccessAmount) }}</strong>
+      </div>
+    }
+  </div>
 
   @if (loading) {
     <div class="loading">Đang tải...</div>
@@ -185,10 +193,24 @@
     </div>
 
     <div class="pagination">
-      <span>
-        Trang {{ listData.page }} / {{ listData.totalPages }}
-        ({{ listData.totalCount }} bản ghi)
-      </span>
+      <div class="pagination-info">
+        <span>
+          Trang {{ listData.page }} / {{ listData.totalPages || 1 }}
+          ({{ listData.totalCount }} bản ghi)
+        </span>
+        <label class="page-size-select">
+          Hiển thị
+          <select
+            [value]="filterForm.controls.pageSize.value"
+            (change)="changePageSize(+$any($event.target).value)"
+          >
+            @for (size of pageSizeOptions; track size) {
+              <option [value]="size">{{ size }}</option>
+            }
+          </select>
+          / trang
+        </label>
+      </div>
       <div class="pagination-buttons">
         <button type="button" [disabled]="listData.page <= 1" (click)="changePage(listData.page - 1)">
           Trước

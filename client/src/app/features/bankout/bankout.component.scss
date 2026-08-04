@@ -115,9 +115,42 @@
   margin-top: 24px;
 
   h3 {
-    margin: 0 0 16px;
+    margin: 0;
     font-size: 16px;
   }
+}
+
+.table-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.success-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 10px 14px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+}
+
+.success-stat-label {
+  font-size: 12px;
+  color: #047857;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+}
+
+.success-stat-value {
+  font-size: 18px;
+  color: #065f46;
 }
 
 .table-wrapper {
@@ -295,11 +328,35 @@ table {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #e2e8f0;
   font-size: 13px;
   color: #64748b;
+
+  .pagination-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .page-size-select {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #475569;
+
+    select {
+      padding: 6px 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: #fff;
+      font-size: 13px;
+      cursor: pointer;
+    }
+  }
 
   .pagination-buttons {
     display: flex;
@@ -483,9 +540,22 @@ table {
     gap: 12px;
     text-align: center;
 
+    .pagination-info {
+      align-items: center;
+    }
+
     .pagination-buttons {
       justify-content: center;
     }
+  }
+
+  .table-card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .success-stat {
+    align-items: flex-start;
   }
 
   .modal-card {

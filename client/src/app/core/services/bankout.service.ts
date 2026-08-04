@@ -4,8 +4,8 @@ import { API_BASE_URL } from '../constants';
 import {
   AgentOption,
   BankoutListItem,
+  BankoutPagedResponse,
   CreateBankoutRequest,
-  PagedResponse,
   PartnerBankItem
 } from '../models/api.models';
 
@@ -29,14 +29,14 @@ export class BankoutService {
   getList(filter: BankoutFilter) {
     let params = new HttpParams()
       .set('page', (filter.page ?? 1).toString())
-      .set('pageSize', (filter.pageSize ?? 10).toString());
+      .set('pageSize', (filter.pageSize ?? 50).toString());
 
     if (filter.requestBankId) params = params.set('requestBankId', filter.requestBankId);
     if (filter.status != null) params = params.set('status', filter.status.toString());
     if (filter.fromDate) params = params.set('fromDate', filter.fromDate);
     if (filter.toDate) params = params.set('toDate', filter.toDate);
 
-    return this.http.get<PagedResponse<BankoutListItem>>(`${API_BASE_URL}/bankout`, { params });
+    return this.http.get<BankoutPagedResponse>(`${API_BASE_URL}/bankout`, { params });
   }
 
   getAgentOptions() {

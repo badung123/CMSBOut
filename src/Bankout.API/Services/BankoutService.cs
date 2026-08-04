@@ -10,7 +10,7 @@ namespace Bankout.API.Services;
 public interface IBankoutService
 {
     Task<BankoutListItemResponse> CreateAsync(CreateBankoutRequest request);
-    Task<PagedResponse<BankoutListItemResponse>> GetPagedAsync(BankoutFilterRequest filter);
+    Task<BankoutPagedResponse> GetPagedAsync(BankoutFilterRequest filter);
     Task<IReadOnlyList<AgentOptionResponse>> GetAgentOptionsAsync();
     Task<BankoutListItemResponse> ApproveAsync(Guid id);
     Task<BankoutListItemResponse> CancelAsync(Guid id);
@@ -21,6 +21,7 @@ public class BankoutService : IBankoutService
 {
     private const double MinAmount = 100000;
     private const double MaxAmount = 300000000;
+    private static readonly int[] AllowedPageSizes = [10, 20, 50, 100];
 
     private readonly ApplicationDbContext _context;
     private readonly IPartnerBankService _partnerBankService;
@@ -69,30 +70,17 @@ public class BankoutService : IBankoutService
         return await MapToResponseAsync(entity.Id);
     }
 
-    public async Task<PagedResponse<BankoutListItemResponse>> GetPagedAsync(BankoutFilterRequest filter)
+    public async Task<BankoutPagedResponse> GetPagedAsync(BankoutFilterRequest filter)
     {
-        var query = _context.BankoutRequests
-            .Include(b => b.Agent)
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(filter.RequestBankId))
-            query = query.Where(b => b.RequestBankId != null && b.RequestBankId.Contains(filter.RequestBankId.Trim()));
-
-        if (filter.Status.HasValue)
-            query = query.Where(b => b.Status == filter.Status.Value);
-
-        if (filter.FromDate.HasValue)
-            query = query.Where(b => b.CreatedDate >= filter.FromDate.Value);
-
-        if (filter.ToDate.HasValue)
-        {
-            var toDate = filter.ToDate.Value.Date.AddDays(1);
-            query = query.Where(b => b.CreatedDate < toDate);
-        }
+        var query = ApplyFilter(_context.BankoutRequests.Include(b => b.Agent), filter);
 
         var totalCount = await query.CountAsync();
+        var totalSuccessAmount = await query
+            .Where(b => b.Status == StatusActionEnum.Success)
+            .SumAsync(b => b.Amount);
+
         var page = filter.Page < 1 ? 1 : filter.Page;
-        var pageSize = filter.PageSize < 1 ? 10 : filter.PageSize;
+        var pageSize = NormalizePageSize(filter.PageSize);
 
         var items = await query
             .OrderByDescending(b => b.CreatedDate)
@@ -114,9 +102,34 @@ public class BankoutService : IBankoutService
                 b.Status))
             .ToListAsync();
 
-        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-        return new PagedResponse<BankoutListItemResponse>(items, totalCount, page, pageSize, totalPages);
+        var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
+        return new BankoutPagedResponse(items, totalCount, page, pageSize, totalPages, totalSuccessAmount);
     }
+
+    private static IQueryable<BankoutRequest> ApplyFilter(
+        IQueryable<BankoutRequest> query,
+        BankoutFilterRequest filter)
+    {
+        if (!string.IsNullOrWhiteSpace(filter.RequestBankId))
+            query = query.Where(b => b.RequestBankId != null && b.RequestBankId.Contains(filter.RequestBankId.Trim()));
+
+        if (filter.Status.HasValue)
+            query = query.Where(b => b.Status == filter.Status.Value);
+
+        if (filter.FromDate.HasValue)
+            query = query.Where(b => b.CreatedDate >= filter.FromDate.Value);
+
+        if (filter.ToDate.HasValue)
+        {
+            var toDate = filter.ToDate.Value.Date.AddDays(1);
+            query = query.Where(b => b.CreatedDate < toDate);
+        }
+
+        return query;
+    }
+
+    private static int NormalizePageSize(int pageSize) =>
+        AllowedPageSizes.Contains(pageSize) ? pageSize : 50;
 
     public async Task<IReadOnlyList<AgentOptionResponse>> GetAgentOptionsAsync()
     {

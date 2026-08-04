@@ -91,6 +91,10 @@ export interface PagedResponse<T> {
   totalPages: number;
 }
 
+export interface BankoutPagedResponse extends PagedResponse<BankoutListItem> {
+  totalSuccessAmount: number;
+}
+
 export interface AgentOption {
   id: number;
   agentName: string;

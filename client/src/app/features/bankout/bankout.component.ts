@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BankoutService } from '../../core/services/bankout.service';
-import { BankoutListItem, PagedResponse, PartnerBankItem } from '../../core/models/api.models';
+import { BankoutListItem, BankoutPagedResponse, PartnerBankItem } from '../../core/models/api.models';
 import { AgentOption } from '../../core/models/api.models';
 import { StatusActionEnum, StatusClassMap, StatusLabels } from '../../core/models/enums';
 import { formatCurrency, formatDateTime, toUppercaseNoAccent } from '../../shared/utils/text.utils';
@@ -20,7 +20,7 @@ export class BankoutComponent implements OnInit {
 
   agents: AgentOption[] = [];
   banks: PartnerBankItem[] = [];
-  listData: PagedResponse<BankoutListItem> | null = null;
+  listData: BankoutPagedResponse | null = null;
   loading = false;
   saving = false;
   approving = false;
@@ -51,13 +51,15 @@ export class BankoutComponent implements OnInit {
     agentId: [0, [Validators.required, Validators.min(1)]]
   });
 
+  readonly pageSizeOptions = [10, 20, 50, 100];
+
   filterForm = this.fb.nonNullable.group({
     requestBankId: [''],
     status: [null as number | null],
     fromDate: [''],
     toDate: [''],
     page: [1],
-    pageSize: [10]
+    pageSize: [50]
   });
 
   ngOnInit(): void {
@@ -139,7 +141,10 @@ export class BankoutComponent implements OnInit {
       pageSize: filter.pageSize
     }).subscribe({
       next: (data) => {
-        this.listData = data;
+        this.listData = {
+          ...data,
+          totalSuccessAmount: data.totalSuccessAmount ?? (data as BankoutPagedResponse & { TotalSuccessAmount?: number }).TotalSuccessAmount ?? 0
+        };
         this.loading = false;
       },
       error: () => {
@@ -203,8 +208,13 @@ export class BankoutComponent implements OnInit {
       fromDate: '',
       toDate: '',
       page: 1,
-      pageSize: 10
+      pageSize: 50
     });
+    this.loadList();
+  }
+
+  changePageSize(pageSize: number): void {
+    this.filterForm.patchValue({ page: 1, pageSize });
     this.loadList();
   }
 
