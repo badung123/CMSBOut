@@ -19,6 +19,25 @@
       <a routerLink="/dashboard" routerLinkActive="active" (click)="closeSidebar()">Dashboard</a>
       <a routerLink="/bank-out" routerLinkActive="active" (click)="closeSidebar()">Bank-out</a>
       <a routerLink="/security" routerLinkActive="active" (click)="closeSidebar()">Bảo mật</a>
+      <div class="nav-group" [class.open]="redirectOpen" [class.active]="redirectActive">
+        <button
+          type="button"
+          class="nav-parent"
+          [attr.aria-expanded]="redirectOpen"
+          (click)="toggleRedirect()"
+        >
+          <span>Redirect</span>
+          <span class="chevron" aria-hidden="true"></span>
+        </button>
+        @if (redirectOpen) {
+          <div class="nav-children">
+            <a routerLink="/redirect/page-rule" routerLinkActive="active" (click)="closeSidebar()">pageRule</a>
+            <a routerLink="/redirect/301" routerLinkActive="active" (click)="closeSidebar()">301</a>
+            <a routerLink="/redirect/cache" routerLinkActive="active" (click)="closeSidebar()">cache</a>
+            <a routerLink="/redirect/security-rule" routerLinkActive="active" (click)="closeSidebar()">securityRule</a>
+          </div>
+        }
+      </div>
       @if (auth.isAdmin()) {
         <a routerLink="/agents" routerLinkActive="active" (click)="closeSidebar()">Agent</a>
       }

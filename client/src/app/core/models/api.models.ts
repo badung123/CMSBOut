@@ -105,3 +105,40 @@ export interface Agent {
   agentName: string;
   createdDate: string;
 }
+
+export interface CloudflareAccount {
+  id: string;
+  userCloudflare: string;
+  zoneId: string;
+  accountId: string;
+  apiToken: string;
+  listDomainRedirect: string;
+  status: boolean;
+  createdDate: string;
+  createdBy: string;
+  updatedDate: string | null;
+  updatedBy: string | null;
+}
+
+export interface SaveCloudflareAccountRequest {
+  userCloudflare: string;
+  zoneId: string;
+  accountId: string;
+  apiToken: string;
+  listDomainRedirect: string;
+  status: boolean;
+}
+
+export interface Redirect301Result {
+  domain: string;
+  success: boolean;
+  action: string;
+  message: string;
+}
+
+export interface PurgeCacheResult {
+  domain: string;
+  success: boolean;
+  action: string;
+  message: string;
+}

@@ -58,6 +58,13 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IBankoutService, BankoutService>();
 builder.Services.AddScoped<IAgentService, AgentService>();
+builder.Services.AddHttpClient("Cloudflare", client =>
+{
+    client.BaseAddress = new Uri("https://api.cloudflare.com/client/v4/");
+    client.Timeout = TimeSpan.FromSeconds(40);
+});
+builder.Services.AddScoped<ICloudflareAccountService, CloudflareAccountService>();
+builder.Services.AddScoped<ICloudflarePageRuleService, CloudflarePageRuleService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -68,7 +75,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularClient", policy =>
     {
-        policy.WithOrigins("https://yensongviet.com")//https://yensongviet.com,http://localhost:4200
+        policy.WithOrigins("http://localhost:4200")//https://yensongviet.com,http://localhost:4200
 			.AllowAnyHeader()
             .AllowAnyMethod();
     });

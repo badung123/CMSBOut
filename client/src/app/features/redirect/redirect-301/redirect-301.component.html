@@ -1,0 +1,74 @@
+<div class="page-header">
+  <h2>301</h2>
+  <p>301 các domain về domain cuối bằng Cloudflare Page Rule</p>
+</div>
+
+<div class="card">
+  <form [formGroup]="form" class="redirect-form" (ngSubmit)="start()">
+    <label>
+      <span>List domain</span>
+      <textarea
+        formControlName="domainList"
+        rows="8"
+        placeholder="Mỗi domain cách nhau bằng dấu phẩy hoặc xuống dòng&#10;vd: a.com, b.com&#10;c.com"
+      ></textarea>
+    </label>
+
+    <label>
+      <span>Domain cuối</span>
+      <input type="text" formControlName="destinationDomain" placeholder="vd: site-cuoi.com" />
+    </label>
+
+    <p class="hint">
+      Domain phải nằm trong tài khoản Cloudflare đang bật ở pageRule. Page rule dùng URL
+      <strong>domain/*</strong>, Forwarding URL, mã <strong>301</strong>, đích
+      <strong>https://domain-cuối/$1</strong>. Tài khoản tắt thì page rule sẽ bị Disable.
+    </p>
+
+    @if (errorMessage) {
+      <div class="error-msg">{{ errorMessage }}</div>
+    }
+
+    <div class="form-actions">
+      <button type="submit" class="btn-run" [disabled]="running">
+        {{ running ? 'Đang 301...' : '301 Now' }}
+      </button>
+    </div>
+  </form>
+</div>
+
+@if (popupOpen) {
+  <div class="modal-overlay" (click)="closePopup()">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="redirect-progress-title" (click)="$event.stopPropagation()">
+      <div class="modal-heading">
+        <h3 id="redirect-progress-title">{{ running ? 'Đang 301' : 'Kết quả 301' }}</h3>
+        <p>{{ doneCount }}/{{ progress.length }} domain · thành công {{ successCount }}</p>
+      </div>
+
+      <div class="progress-list">
+        @for (item of progress; track item.domain) {
+          <div
+            class="progress-item"
+            #progressRow
+            [class.running]="item.state === 'running'"
+            [class.success]="item.state === 'success'"
+            [class.warning]="item.state === 'warning'"
+            [class.error]="item.state === 'error'"
+            [class.stopped]="item.state === 'stopped'"
+          >
+            <div class="progress-domain">{{ item.domain }}</div>
+            <div class="progress-message">{{ item.message }}</div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-actions">
+        @if (running) {
+          <button type="button" class="btn-stop" (click)="stop()">Dừng</button>
+        } @else {
+          <button type="button" class="btn-close" (click)="closePopup()">Đóng</button>
+        }
+      </div>
+    </div>
+  </div>
+}

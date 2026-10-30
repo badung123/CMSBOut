@@ -14,6 +14,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<BalanceHistory> BalanceHistories => Set<BalanceHistory>();
     public DbSet<BankoutRequest> BankoutRequests => Set<BankoutRequest>();
     public DbSet<Agent> Agents => Set<Agent>();
+    public DbSet<CloudflareAccount> CloudflareAccounts => Set<CloudflareAccount>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -43,6 +44,21 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasKey(e => e.Id);
             entity.Property(e => e.AgentName).IsRequired().HasMaxLength(200);
             entity.Property(e => e.CreatedDate).IsRequired();
+        });
+
+        builder.Entity<CloudflareAccount>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserCloudflare).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.ZoneId).IsRequired().HasMaxLength(64);
+            entity.Property(e => e.AccountId).IsRequired().HasMaxLength(64);
+            entity.Property(e => e.ApiToken).IsRequired().HasMaxLength(512);
+            entity.Property(e => e.ListDomainRedirect).IsRequired();
+            entity.Property(e => e.Status).IsRequired();
+            entity.Property(e => e.CreatedDate).IsRequired();
+            entity.Property(e => e.CreatedBy).IsRequired().HasMaxLength(256);
+            entity.Property(e => e.UpdatedBy).HasMaxLength(256);
+            entity.HasIndex(e => e.ZoneId).IsUnique();
         });
 
         builder.Entity<BankoutRequest>(entity =>

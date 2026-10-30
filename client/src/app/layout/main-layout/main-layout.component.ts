@@ -16,11 +16,26 @@ export class MainLayoutComponent {
   private readonly router = inject(Router);
 
   sidebarOpen = false;
+  redirectOpen = false;
 
   constructor() {
+    this.redirectOpen = this.isRedirectUrl(this.router.url);
     this.router.events
-      .pipe(filter((event) => event instanceof NavigationEnd))
-      .subscribe(() => this.closeSidebar());
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => {
+        this.closeSidebar();
+        if (this.isRedirectUrl(event.urlAfterRedirects)) {
+          this.redirectOpen = true;
+        }
+      });
+  }
+
+  get redirectActive(): boolean {
+    return this.isRedirectUrl(this.router.url);
+  }
+
+  toggleRedirect(): void {
+    this.redirectOpen = !this.redirectOpen;
   }
 
   toggleSidebar(): void {
@@ -40,5 +55,10 @@ export class MainLayoutComponent {
     if (window.innerWidth >= 1024) {
       this.sidebarOpen = false;
     }
+  }
+
+  private isRedirectUrl(url: string): boolean {
+    const path = url.split('?')[0].split('#')[0];
+    return path === '/redirect' || path.startsWith('/redirect/');
   }
 }

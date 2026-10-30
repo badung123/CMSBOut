@@ -1,0 +1,67 @@
+<div class="page-header">
+  <h2>cache</h2>
+  <p>Xóa toàn bộ cache Cloudflare của các domain đã nhập</p>
+</div>
+
+<div class="card">
+  <form [formGroup]="form" class="redirect-form" (ngSubmit)="start()">
+    <label>
+      <span>List domain</span>
+      <textarea
+        formControlName="domainList"
+        rows="8"
+        placeholder="Mỗi domain cách nhau bằng dấu phẩy hoặc xuống dòng&#10;vd: a.com, b.com&#10;c.com"
+      ></textarea>
+    </label>
+
+    <p class="hint">
+      Mỗi domain phải nằm trong tài khoản Cloudflare ở pageRule. Purge Everything xóa toàn bộ cache của zone chứa domain đó.
+      API Token cần quyền Cache Purge.
+    </p>
+
+    @if (errorMessage) {
+      <div class="error-msg">{{ errorMessage }}</div>
+    }
+
+    <div class="form-actions">
+      <button type="submit" class="btn-run" [disabled]="running">
+        {{ running ? 'Đang xóa cache...' : 'Purge Everything' }}
+      </button>
+    </div>
+  </form>
+</div>
+
+@if (popupOpen) {
+  <div class="modal-overlay" (click)="closePopup()">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="purge-progress-title" (click)="$event.stopPropagation()">
+      <div class="modal-heading">
+        <h3 id="purge-progress-title">{{ running ? 'Đang xóa cache' : 'Kết quả xóa cache' }}</h3>
+        <p>{{ doneCount }}/{{ progress.length }} domain · thành công {{ successCount }}</p>
+      </div>
+
+      <div class="progress-list">
+        @for (item of progress; track item.domain) {
+          <div
+            class="progress-item"
+            #progressRow
+            [class.running]="item.state === 'running'"
+            [class.success]="item.state === 'success'"
+            [class.error]="item.state === 'error'"
+            [class.stopped]="item.state === 'stopped'"
+          >
+            <div class="progress-domain">{{ item.domain }}</div>
+            <div class="progress-message">{{ item.message }}</div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-actions">
+        @if (running) {
+          <button type="button" class="btn-stop" (click)="stop()">Dừng</button>
+        } @else {
+          <button type="button" class="btn-close" (click)="closePopup()">Đóng</button>
+        }
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,143 @@
+<div class="page-header">
+  <h2>pageRule</h2>
+  <p>Thêm, sửa, xóa tài khoản Cloudflare dùng để 301 về site cuối</p>
+</div>
+
+<div class="card">
+  <h3>{{ editingId ? 'Cập nhật tài khoản' : 'Thêm tài khoản Cloudflare' }}</h3>
+
+  <form [formGroup]="form" class="account-form" (ngSubmit)="save()">
+    <label>
+      <span>User Cloudflare</span>
+      <input type="text" formControlName="userCloudflare" placeholder="Email hoặc user Cloudflare" />
+    </label>
+
+    <label>
+      <span>Zone ID</span>
+      <input type="text" formControlName="zoneId" placeholder="Zone ID" />
+    </label>
+
+    <label>
+      <span>Account ID</span>
+      <input type="text" formControlName="accountId" placeholder="Account ID" />
+    </label>
+
+    <label>
+      <span>API Token</span>
+      <input type="password" formControlName="apiToken" placeholder="Cloudflare API Token" autocomplete="new-password" />
+      <small>Token có quyền Page Rules Edit và Cache Purge</small>
+    </label>
+
+    <label class="status-field">
+      <input type="checkbox" formControlName="status" />
+      <span>Đang bật</span>
+    </label>
+
+    <label class="span-2">
+      <span>List domain redirect</span>
+      <textarea formControlName="listDomainRedirect" rows="4" placeholder="Mỗi domain một dòng"></textarea>
+    </label>
+
+    <div class="form-actions span-2">
+      <button type="submit" class="btn-save" [disabled]="saving">
+        {{ saving ? 'Đang lưu...' : (editingId ? 'Cập nhật' : 'Thêm mới') }}
+      </button>
+      @if (editingId) {
+        <button type="button" class="btn-cancel" (click)="cancelEdit()">Hủy</button>
+      }
+    </div>
+  </form>
+
+  @if (errorMessage) {
+    <div class="error-msg">{{ errorMessage }}</div>
+  }
+</div>
+
+<div class="card table-card">
+  <h3>Danh sách tài khoản</h3>
+
+  @if (loading) {
+    <div class="loading">Đang tải...</div>
+  } @else if (accounts.length === 0) {
+    <div class="empty">Chưa có tài khoản Cloudflare nào.</div>
+  } @else {
+    <div class="table-wrapper desktop-table">
+      <table>
+        <thead>
+          <tr>
+            <th>User Cloudflare</th>
+            <th>Zone ID</th>
+            <th>Account ID</th>
+            <th>API Token</th>
+            <th>Domain redirect</th>
+            <th>Status</th>
+            <th>Tạo</th>
+            <th>Sửa</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (account of accounts; track account.id) {
+            <tr>
+              <td>{{ account.userCloudflare }}</td>
+              <td class="mono">{{ account.zoneId }}</td>
+              <td class="mono">{{ account.accountId }}</td>
+              <td>
+                <span class="status-badge" [class.on]="account.apiToken">
+                  {{ account.apiToken ? 'Đã có' : 'Chưa có' }}
+                </span>
+              </td>
+              <td class="domains">{{ account.listDomainRedirect }}</td>
+              <td>
+                <span class="status-badge" [class.on]="account.status">
+                  {{ account.status ? 'Bật' : 'Tắt' }}
+                </span>
+              </td>
+              <td>
+                <div>{{ formatDateTime(account.createdDate) }}</div>
+                <small>{{ account.createdBy }}</small>
+              </td>
+              <td>
+                <div>{{ formatDateTime(account.updatedDate) }}</div>
+                <small>{{ account.updatedBy || '-' }}</small>
+              </td>
+              <td class="actions">
+                <button type="button" class="btn-toggle" (click)="toggleStatus(account)">
+                  {{ account.status ? 'Tắt' : 'Bật' }}
+                </button>
+                <button type="button" class="btn-edit" (click)="startEdit(account)">Sửa</button>
+                <button type="button" class="btn-delete" (click)="delete(account)">Xóa</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-list">
+      @for (account of accounts; track account.id) {
+        <article class="mobile-item">
+          <div class="mobile-item-header">
+            <strong>{{ account.userCloudflare }}</strong>
+            <span class="status-badge" [class.on]="account.status">
+              {{ account.status ? 'Bật' : 'Tắt' }}
+            </span>
+          </div>
+          <p class="mobile-meta">Zone: {{ account.zoneId }}</p>
+          <p class="mobile-meta">Account: {{ account.accountId }}</p>
+          <p class="mobile-meta">API Token: {{ account.apiToken ? 'Đã có' : 'Chưa có' }}</p>
+          <p class="domains">{{ account.listDomainRedirect }}</p>
+          <p class="mobile-meta">Tạo: {{ formatDateTime(account.createdDate) }} · {{ account.createdBy }}</p>
+          <p class="mobile-meta">Sửa: {{ formatDateTime(account.updatedDate) }} · {{ account.updatedBy || '-' }}</p>
+          <div class="mobile-actions">
+            <button type="button" class="btn-toggle" (click)="toggleStatus(account)">
+              {{ account.status ? 'Tắt' : 'Bật' }}
+            </button>
+            <button type="button" class="btn-edit" (click)="startEdit(account)">Sửa</button>
+            <button type="button" class="btn-delete" (click)="delete(account)">Xóa</button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</div>
