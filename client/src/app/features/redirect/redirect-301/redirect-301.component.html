@@ -10,7 +10,7 @@
       <textarea
         formControlName="domainList"
         rows="8"
-        placeholder="Mỗi domain cách nhau bằng dấu phẩy hoặc xuống dòng&#10;vd: a.com, b.com&#10;c.com"
+        placeholder="Mỗi domain cách nhau bằng dấu phẩy hoặc xuống dòng&#10;vd: a.com, www.b.com&#10;blog.c.com"
       ></textarea>
     </label>
 
@@ -20,9 +20,11 @@
     </label>
 
     <p class="hint">
-      Domain phải nằm trong tài khoản Cloudflare đang bật ở pageRule. Page rule dùng URL
-      <strong>domain/*</strong>, Forwarding URL, mã <strong>301</strong>, đích
-      <strong>https://domain-cuối/$1</strong>. Tài khoản tắt thì page rule sẽ bị Disable.
+      Page rule giữ đúng host đã nhập:
+      <strong>www.domain/*</strong>, <strong>subdomain.domain/*</strong> hoặc <strong>domain/*</strong>.
+      Forwarding URL, mã <strong>301</strong>, đích <strong>https://domain-cuối/$1</strong>.
+      Tài khoản Cloudflare ở pageRule cần chứa đúng host đó, hoặc domain cha nếu host là www hay subdomain.
+      Tài khoản đang bật thì tạo hoặc sửa rule; tài khoản tắt thì Disable rule đó.
     </p>
 
     @if (errorMessage) {

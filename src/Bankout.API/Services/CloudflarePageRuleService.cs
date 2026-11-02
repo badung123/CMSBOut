@@ -54,7 +54,7 @@ public class CloudflarePageRuleService : ICloudflarePageRuleService
             return new Redirect301Result(domain, false, "failed", "Domain cuối trùng domain nguồn.");
 
         var accounts = await _context.CloudflareAccounts.AsNoTracking().ToListAsync(cancellationToken);
-        var matches = accounts.Where(a => ContainsDomain(a.ListDomainRedirect, domain)).ToList();
+        var matches = FindRedirectAccounts(accounts, domain);
         if (matches.Count == 0)
             return new Redirect301Result(domain, false, "failed", "Không tìm thấy tài khoản Cloudflare chứa domain này.");
 
@@ -168,7 +168,7 @@ public class CloudflarePageRuleService : ICloudflarePageRuleService
         if (zoneId.Length == 0 || zoneId.Length > 64 || !zoneId.All(char.IsAsciiLetterOrDigit))
             return Fail($"Zone ID của {user} không hợp lệ.");
 
-        var pattern = $"{domain}/*";
+        var pattern = PageRuleUrl(domain);
         var destinationUrl = $"https://{destination}/$1";
 
         try
@@ -351,11 +351,54 @@ public class CloudflarePageRuleService : ICloudflarePageRuleService
             else if (value.StartsWith("http://", StringComparison.Ordinal))
                 value = value["http://".Length..];
 
-            if (value == $"{domain}/*" || value == $"*.{domain}/*")
+            if (value == PageRuleUrl(domain))
                 return true;
         }
 
         return false;
+    }
+
+    private static List<CloudflareAccount> FindRedirectAccounts(List<CloudflareAccount> accounts, string host)
+    {
+        var exact = accounts.Where(a => ContainsDomain(a.ListDomainRedirect, host)).ToList();
+        if (exact.Count > 0)
+            return exact;
+
+        var matched = new List<(CloudflareAccount Account, int Length)>();
+        foreach (var account in accounts)
+        {
+            var parent = LongestParentDomain(account.ListDomainRedirect, host);
+            if (parent != null)
+                matched.Add((account, parent.Length));
+        }
+
+        if (matched.Count == 0)
+            return [];
+
+        var bestLength = matched.Max(item => item.Length);
+        return matched.Where(item => item.Length == bestLength).Select(item => item.Account).ToList();
+    }
+
+    private static string? LongestParentDomain(string? list, string host)
+    {
+        if (string.IsNullOrWhiteSpace(list))
+            return null;
+
+        string? best = null;
+        foreach (var part in list.Split(DomainSeparators, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var listed = NormalizeDomain(part);
+            if (listed.Length == 0 || string.Equals(listed, host, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (!host.EndsWith("." + listed, StringComparison.Ordinal))
+                continue;
+
+            if (best == null || listed.Length > best.Length)
+                best = listed;
+        }
+
+        return best;
     }
 
     private static bool ContainsDomain(string? list, string domain)
@@ -371,6 +414,8 @@ public class CloudflarePageRuleService : ICloudflarePageRuleService
 
         return false;
     }
+
+    private static string PageRuleUrl(string host) => $"{host}/*";
 
     internal static string NormalizeDomain(string? raw)
     {
@@ -393,6 +438,7 @@ public class CloudflarePageRuleService : ICloudflarePageRuleService
         if (query >= 0)
             value = value[..query];
 
+        // Chỉ bỏ tiền tố "*.". www và subdomain giữ nguyên.
         if (value.StartsWith("*.", StringComparison.Ordinal))
             value = value[2..];
 
